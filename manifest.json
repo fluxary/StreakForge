@@ -1,0 +1,60 @@
+{
+  "name": "StreakForge",
+  "short_name": "StreakForge",
+  "description": "Gamified fitness tracker with Training Program, streak tracking and muscle ranking system",
+
+  "start_url": "./",
+  "scope": "./",
+
+  "display": "standalone",
+  "orientation": "portrait-primary",
+
+  "theme_color": "#0f1419",
+  "background_color": "#0f1419",
+
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+
+  "categories": [
+    "fitness",
+    "health",
+    "sports"
+  ],
+
+  "shortcuts": [
+    {
+      "name": "Log Workout",
+      "short_name": "Log",
+      "url": "./?page=workout",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Muscles",
+      "short_name": "Muscles",
+      "url": "./?page=muscles",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

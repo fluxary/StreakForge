@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
+  <meta name="theme-color" content="#0f1419" />
+  <meta name="description" content="Gamified fitness tracker with Training Program, real streak logic, and muscle ranking system" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="supported-color-schemes" content="dark" />
+  <meta name="format-detection" content="telephone=no" />
+  
+  <!-- Apple Mobile Web App Support -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="StreakForge" />
+  <meta name="apple-mobile-web-app-status-bar" content="black-translucent" />
+  <meta name="viewport-fit" content="cover" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-startup-image" href="icons/icon-512.png" />
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json" />
+  
+  <!-- Security & CSP -->
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com" />
+  
+  <title>StreakForge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── SIDEBAR ───────────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-icon">⚔</span>
+      <span class="brand-name">StreakForge</span>
+    </div>
+
+    <div class="player-card" id="playerCard" title="Click to edit profile">
+      <div class="player-avatar" id="avatarEl">SF</div>
+      <div class="player-info">
+        <div class="player-name" id="sidebarPlayerName">Forger</div>
+        <div class="player-title" id="sidebarPlayerTitle">Recruit</div>
+      </div>
+      <div class="player-level" id="sidebarPlayerLevel">1</div>
+    </div>
+
+    <div class="xp-bar-wrap">
+      <div class="xp-bar-track">
+        <div class="xp-bar-fill" id="sidebarXpBar"></div>
+      </div>
+      <span class="xp-label" id="sidebarXpLabel">0 / 100 XP</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-page="dashboard">
+        <span class="nav-icon">◈</span><span>Dashboard</span>
+      </a>
+      <a href="#" class="nav-item" data-page="program">
+        <span class="nav-icon">✦</span><span>Program</span>
+      </a>
+      <a href="#" class="nav-item" data-page="workout">
+        <span class="nav-icon">𖦏</span><span>Log Workout</span>
+      </a>
+      <a href="#" class="nav-item" data-page="muscles">
+        <span class="nav-icon">✪</span><span>Muscles</span>
+      </a>
+      <a href="#" class="nav-item" data-page="leaderboard">
+        <span class="nav-icon">♛</span><span>Leaderboard</span>
+      </a>
+      <a href="#" class="nav-item" data-page="achievements">
+        <span class="nav-icon">★</span><span>Achievements</span>
+      </a>
+      <a href="#" class="nav-item" data-page="stats">
+        <span class="nav-icon">✧</span><span>Statistics</span>
+      </a>
+      <a href="#" class="nav-item" data-page="history">
+        <span class="nav-icon">≡</span><span>History</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn-ghost" id="installBtn" style="display:none">📲 Install App</button>
+      <button class="btn-ghost" id="exportBtn">Export</button>
+      <label class="btn-ghost" for="importInput">Import</label>
+      <input type="file" id="importInput" accept=".json" style="display:none" />
+      <button class="btn-ghost danger" id="resetBtn">Reset</button>
+    </div>
+  </aside>
+
+  <!-- ── MOBILE HEADER ─────────────────────────────────────────── -->
+  <header class="mobile-header">
+    <button class="hamburger" id="hamburgerBtn">☰</button>
+    <span class="brand-name-mobile">StreakForge</span>
+    <span class="mobile-level" id="mobileLevelBadge">Lv1</span>
+  </header>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- ── MAIN CONTENT ──────────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- ── PAGE: DASHBOARD ──────────────────────────────────────── -->
+    <section class="page active" id="page-dashboard">
+      <div class="page-header">
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-subtitle" id="dashGreeting">Welcome back, Forger</p>
+      </div>
+
+      <!-- Stat cards row -->
+      <div class="stats-grid">
+        <div class="stat-card" id="cardStreak">
+          <div class="stat-icon">🔥</div>
+          <div class="stat-value" id="statStreak">0</div>
+          <div class="stat-label">Day Streak</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💪</div>
+          <div class="stat-value" id="statTotalWorkouts">0</div>
+          <div class="stat-label">Workouts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⚡</div>
+          <div class="stat-value" id="statTotalVolume">0</div>
+          <div class="stat-label">Total Volume</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">✏️</div>
+          <div class="stat-value" id="statAdherenceDash">—</div>
+          <div class="stat-label">Program Adherence</div>
+        </div>
+      </div>
+
+      <!-- Today's Program + Weekly Schedule -->
+      <div class="program-overview-row" id="programOverviewRow">
+        <div class="card today-program-card">
+          <div class="card-header">
+            <h2 class="card-title">Today's Plan</h2>
+            <span class="badge cyan" id="todayDayBadge">—</span>
+          </div>
+          <div id="todayProgramContent">
+            <p class="empty-state" style="padding:16px 0">Set up your training program to see today's plan.</p>
+          </div>
+        </div>
+        <div class="card weekly-overview-card">
+          <div class="card-header">
+            <h2 class="card-title">This Week</h2>
+            <span class="week-adherence-badge" id="weekAdherenceBadge">—</span>
+          </div>
+          <div class="weekly-schedule-mini" id="weeklyScheduleMini">
+            <p class="empty-state" style="padding:16px 0">No program set.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Body + Insights row -->
+      <div class="body-insights-row">
+        <!-- Body Map -->
+        <div class="card body-card">
+          <div class="card-header">
+            <h2 class="card-title">Muscle Map</h2>
+            <div class="toggle-group">
+              <button class="toggle-btn active" data-side="front">Front</button>
+              <button class="toggle-btn" data-side="back">Back</button>
+            </div>
+          </div>
+          <div class="body-map-wrap">
+            <div class="body-svg-container" id="bodyContainer">
+              <!-- SVG injected by JS -->
+            </div>
+          </div>
+          <div class="muscle-legend">
+            <span class="legend-dot unranked"></span> Unranked
+            <span class="legend-dot bronze"></span> Bronze
+            <span class="legend-dot silver"></span> Silver
+            <span class="legend-dot gold"></span> Gold
+            <span class="legend-dot diamond"></span> Diamond
+            <span class="legend-dot obsidian"></span> Obsidian
+          </div>
+        </div>
+
+        <!-- Insights -->
+        <div class="card insights-card">
+          <div class="card-header">
+            <h2 class="card-title">Insights</h2>
+            <span class="badge cyan">Live</span>
+          </div>
+          <div class="insights-list" id="insightsList">
+            <div class="insight-item">
+              <span class="insight-icon">💡</span>
+              <p>Log your first workout to generate insights.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Heatmap -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Activity Heatmap</h2>
+          <span class="heatmap-legend">
+            <span class="hm-cell" style="opacity:0.15"></span>
+            <span class="hm-cell" style="opacity:0.4"></span>
+            <span class="hm-cell" style="opacity:0.65"></span>
+            <span class="hm-cell" style="opacity:0.85"></span>
+            <span class="hm-cell" style="opacity:1"></span>
+            <small>Less → More</small>
+          </span>
+        </div>
+        <div class="heatmap-wrap" id="heatmapWrap"></div>
+      </div>
+
+      <!-- Recent workouts -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Recent Workouts</h2>
+        </div>
+        <div class="workout-list" id="recentWorkoutsList">
+          <p class="empty-state">No workouts yet. Start forging!</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PAGE: PROGRAM ─────────────────────────────────────────── -->
+    <section class="page" id="page-program">
+      <div class="page-header">
+        <h1 class="page-title">Training Program</h1>
+        <p class="page-subtitle">Define your weekly split. The app will track your schedule.</p>
+      </div>
+
+      <div class="program-grid">
+        <!-- Weekly Schedule -->
+        <div class="program-schedule-col">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Weekly Schedule</h2>
+              <button class="btn-ghost" id="clearProgramBtn">Clear All</button>
+            </div>
+            <div class="days-list" id="daysList">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Day Editor -->
+        <div class="program-editor-col">
+          <div class="card" id="dayEditorCard">
+            <div class="card-header">
+              <h2 class="card-title" id="dayEditorTitle">Select a Day</h2>
+              <div class="day-type-toggle" id="dayTypeToggle" style="display:none">
+                <button class="toggle-btn active" data-type="workout" id="typeWorkoutBtn">Workout</button>
+                <button class="toggle-btn" data-type="rest" id="typeRestBtn">Rest Day</button>
+              </div>
+            </div>
+            <div id="dayEditorContent">
+              <p class="empty-state" style="padding:24px 0">Click a day on the left to configure it.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PAGE: LOG WORKOUT ─────────────────────────────────────── -->
+    <section class="page" id="page-workout">
+      <div class="page-header">
+        <h1 class="page-title">Log Workout</h1>
+        <p class="page-subtitle">Every rep forges your legend</p>
+      </div>
+
+      <div class="workout-form-grid">
+        <div class="card form-card">
+          <h2 class="card-title mb-20">New Workout Entry</h2>
+
+          <div class="form-row two-col">
+            <div class="form-group">
+              <label class="form-label">Muscle Group</label>
+              <select class="form-input" id="formMuscle">
+                <option value="">Select muscle...</option>
+                <option value="chest">Chest</option>
+                <option value="back">Back</option>
+                <option value="shoulders">Shoulders</option>
+                <option value="biceps">Biceps</option>
+                <option value="triceps">Triceps</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Exercise Name</label>
+              <input type="text" class="form-input" id="formExercise" placeholder="e.g. Bench Press" />
+            </div>
+          </div>
+
+          <div class="form-row three-col">
+            <div class="form-group">
+              <label class="form-label">Sets</label>
+              <input type="number" class="form-input" id="formSets" placeholder="4" min="1" max="30" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Reps</label>
+              <input type="number" class="form-input" id="formReps" placeholder="10" min="1" max="100" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Weight (kg)</label>
+              <input type="number" class="form-input" id="formWeight" placeholder="60" min="0" max="1000" />
+            </div>
+          </div>
+
+          <div class="form-row two-col">
+            <div class="form-group">
+              <label class="form-label">Duration (min)</label>
+              <input type="number" class="form-input" id="formDuration" placeholder="45" min="1" max="300" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Date</label>
+              <input type="date" class="form-input" id="formDate" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Notes (optional)</label>
+            <textarea class="form-input form-textarea" id="formNotes" placeholder="How did it feel?"></textarea>
+          </div>
+
+
+          <button class="btn-primary" id="logWorkoutBtn">
+            <span>⚡</span> Forge Workout
+          </button>
+        </div>
+
+        <!-- XP Preview -->
+        <div class="card xp-preview-card">
+          <h2 class="card-title mb-20">XP Preview</h2>
+          <div class="xp-preview-display">
+            <div class="xp-preview-value" id="xpPreview">+0 XP</div>
+            <div class="xp-preview-label">Estimated Gain</div>
+          </div>
+          <div class="xp-breakdown" id="xpBreakdown">
+            <div class="breakdown-row">
+              <span>Base XP</span><span>+25</span>
+            </div>
+            <div class="breakdown-row">
+              <span>Volume Bonus</span><span id="prevVolBonus">+0</span>
+            </div>
+            <div class="breakdown-row pr-row" id="prevPRRow" style="display:none">
+              <span>🏅 PR Bonus</span><span>+50</span>
+            </div>
+          </div>
+          <hr class="divider" />
+          <div class="exercise-suggestion" id="exerciseSuggestions">
+            <p class="hint-text">Select muscle to see exercises</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PAGE: MUSCLES ────────────────────────────────────────── -->
+    <section class="page" id="page-muscles">
+      <div class="page-header">
+        <h1 class="page-title">Muscle Tracker</h1>
+        <p class="page-subtitle">Each muscle, its own story</p>
+      </div>
+
+      <div class="muscle-cards-grid" id="muscleCardsGrid">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Muscle Detail Panel -->
+      <div class="muscle-detail-overlay" id="muscleDetailOverlay">
+        <div class="muscle-detail-panel" id="muscleDetailPanel">
+          <button class="detail-close" id="muscleDetailClose">✕</button>
+          <div class="detail-header">
+            <div class="detail-muscle-icon" id="detailIcon">💪</div>
+            <div>
+              <h2 class="detail-muscle-name" id="detailName">Chest</h2>
+              <div class="detail-rank-badge" id="detailRankBadge">Unranked</div>
+            </div>
+          </div>
+          <div class="detail-stats-row">
+            <div class="detail-stat"><span class="ds-val" id="detailXP">0</span><span class="ds-lbl">XP</span></div>
+            <div class="detail-stat"><span class="ds-val" id="detailVolume">0</span><span class="ds-lbl">Volume</span></div>
+            <div class="detail-stat"><span class="ds-val" id="detailStreak">0</span><span class="ds-lbl">Streak</span></div>
+            <div class="detail-stat"><span class="ds-val" id="detailWorkouts">0</span><span class="ds-lbl">Workouts</span></div>
+          </div>
+          <div class="rank-progress-section">
+            <h3 class="section-sub">Rank Progress</h3>
+            <div class="rank-steps" id="detailRankSteps"></div>
+          </div>
+          <div class="prs-section">
+            <h3 class="section-sub">Personal Records</h3>
+            <div class="prs-list" id="detailPRList"></div>
+          </div>
+          <div class="history-section">
+            <h3 class="section-sub">Recent Workouts</h3>
+            <div class="history-list" id="detailHistoryList"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PAGE: LEADERBOARD ─────────────────────────────────────── -->
+    <section class="page" id="page-leaderboard">
+      <div class="page-header">
+        <h1 class="page-title">Leaderboard</h1>
+        <p class="page-subtitle">Your strongest muscles, ranked</p>
+      </div>
+
+      <div class="card lb-card">
+        <div class="table-responsive">
+          <table class="lb-table" id="leaderboardTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Muscle</th>
+                <th>Rank</th>
+                <th>XP</th>
+                <th>Volume</th>
+                <th>Streak</th>
+                <th>Workouts</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PAGE: ACHIEVEMENTS ────────────────────────────────────── -->
+    <section class="page" id="page-achievements">
+      <div class="page-header">
+        <h1 class="page-title">Achievements</h1>
+        <p class="page-subtitle" id="achSubtitle">0 / 20 unlocked</p>
+      </div>
+
+      <div class="achievements-grid" id="achievementsGrid">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- ── PAGE: STATISTICS ──────────────────────────────────────── -->
+    <section class="page" id="page-stats">
+      <div class="page-header">
+        <h1 class="page-title">Statistics</h1>
+        <p class="page-subtitle">Your progress, visualized</p>
+      </div>
+
+      <!-- Program adherence stat -->
+      <div class="stats-grid stats-grid-3" id="statsTopRow">
+        <div class="stat-card">
+          <div class="stat-icon">📋</div>
+          <div class="stat-value" id="statAdherence">—</div>
+          <div class="stat-label">Program Adherence</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📅</div>
+          <div class="stat-value" id="statUniqueDays">0</div>
+          <div class="stat-label">Training Days</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🔥</div>
+          <div class="stat-value" id="statBestStreakStats">0</div>
+          <div class="stat-label">Best Streak</div>
+        </div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="card chart-card">
+          <h2 class="card-title">Volume Over Time</h2>
+          <div class="chart-wrap"><canvas id="chartVolume"></canvas></div>
+        </div>
+        <div class="card chart-card">
+          <h2 class="card-title">Workouts Per Muscle</h2>
+          <div class="chart-wrap"><canvas id="chartMuscle"></canvas></div>
+        </div>
+        <div class="card chart-card wide">
+          <h2 class="card-title">Weekly Activity</h2>
+          <div class="chart-wrap"><canvas id="chartWeekly"></canvas></div>
+        </div>
+        <div class="card chart-card wide">
+          <h2 class="card-title">Monthly Volume</h2>
+          <div class="chart-wrap"><canvas id="chartMonthly"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PAGE: HISTORY ─────────────────────────────────────────── -->
+    <section class="page" id="page-history">
+      <div class="page-header">
+        <h1 class="page-title">Workout History</h1>
+        <p class="page-subtitle" id="historySubtitle">All sessions</p>
+      </div>
+
+      <div class="card">
+        <div class="history-filters">
+          <select class="form-input filter-select" id="filterMuscle">
+            <option value="">All muscles</option>
+            <option value="chest">Chest</option>
+            <option value="back">Back</option>
+            <option value="shoulders">Shoulders</option>
+            <option value="biceps">Biceps</option>
+            <option value="triceps">Triceps</option>
+          </select>
+          <input type="text" class="form-input filter-input" id="filterSearch" placeholder="Search exercise..." />
+        </div>
+        <div class="full-history-list" id="fullHistoryList"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── XP POPUP ──────────────────────────────────────────────── -->
+  <div class="xp-popup" id="xpPopup">+0 XP</div>
+
+  <!-- ── CONFIRM DIALOG ────────────────────────────────────────── -->
+  <div class="modal-overlay" id="confirmOverlay">
+    <div class="modal">
+      <h2 class="modal-title">Reset All Progress?</h2>
+      <p class="modal-text">This will permanently erase all your data. This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="confirmCancel">Cancel</button>
+        <button class="btn-primary danger" id="confirmReset">Reset Everything</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PROFILE MODAL ─────────────────────────────────────────── -->
+  <div class="modal-overlay" id="profileOverlay">
+    <div class="modal">
+      <h2 class="modal-title">Edit Profile</h2>
+      <p class="modal-text">Customize how you appear throughout the app.</p>
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="form-label">Display Name</label>
+        <input type="text" class="form-input" id="profileDisplayName" placeholder="Forger" maxlength="24" />
+      </div>
+      <div class="form-group" style="margin-bottom:24px">
+        <label class="form-label">Nickname / Tag</label>
+        <input type="text" class="form-input" id="profileUsername" placeholder="TitanSlayer" maxlength="20" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="profileCancel">Cancel</button>
+        <button class="btn-primary" id="profileSave">Save Profile</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ACHIEVEMENT TOAST ─────────────────────────────────────── -->
+  <div class="ach-toast" id="achToast">
+    <div class="ach-toast-icon" id="achToastIcon">🏆</div>
+    <div class="ach-toast-body">
+      <div class="ach-toast-label">Achievement Unlocked!</div>
+      <div class="ach-toast-name" id="achToastName">First Workout</div>
+    </div>
+  </div>
+
+  <!-- ── LEVEL UP OVERLAY ──────────────────────────────────────── -->
+  <div class="levelup-overlay" id="levelupOverlay">
+    <div class="levelup-card">
+      <div class="levelup-glow"></div>
+      <div class="levelup-label">LEVEL UP</div>
+      <div class="levelup-number" id="levelupNumber">2</div>
+      <div class="levelup-title" id="levelupTitle">Beginner</div>
+      <button class="btn-primary" onclick="document.getElementById('levelupOverlay').classList.remove('visible')">Continue</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+
+  <!-- PWA Service Worker Registration & Install Handler -->
+  <script>
+    'use strict';
+
+    // Prevent double-tap zoom and enhance mobile feel
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', e => {
+      const now = new Date().getTime();
+      if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, false);
+
+    // Prevent pinch zoom
+    document.addEventListener('gesturestart', e => {
+      e.preventDefault();
+    }, false);
+
+    // Prevent pull-to-refresh on Android
+    let lastY = 0;
+    document.body.addEventListener('touchstart', e => {
+      lastY = e.touches[0].clientY;
+    }, { passive: true });
+
+    document.body.addEventListener('touchmove', e => {
+      const currentY = e.touches[0].clientY;
+      if (currentY > lastY + 10 && window.scrollY === 0) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    // Service Worker Registration with Update Handling
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js', { scope: './' })
+          .then(registration => {
+            console.log('[PWA] Service Worker registered:', registration);
+            
+            // Check for updates every minute
+            setInterval(() => {
+              registration.update().catch(err => console.warn('[PWA] Update check failed:', err));
+            }, 60000);
+
+            // Handle waiting service worker
+            if (registration.waiting) {
+              console.log('[PWA] Waiting service worker found');
+            }
+
+            registration.addEventListener('updatefound', () => {
+              const newWorker = registration.installing;
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('[PWA] App update available');
+                  showXPPopup('✓ App Updated');
+                }
+              });
+            });
+          })
+          .catch(error => {
+            console.error('[PWA] Service Worker registration failed:', error);
+          });
+
+        // Handle controller change
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          console.log('[PWA] New service worker activated');
+        });
+      });
+    }
+
+    // Prevent viewport zoom on input focus
+    document.addEventListener('touchmove', e => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+        return;
+      }
+    }, { passive: true });
+
+    // PWA Install Prompt Handler
+    let deferredPrompt = null;
+    
+    window.addEventListener('beforeinstallprompt', event => {
+      console.log('[PWA] Install prompt available');
+      event.preventDefault();
+      deferredPrompt = event;
+      
+      const installBtn = document.getElementById('installBtn');
+      if (installBtn && !window.navigator.standalone) {
+        installBtn.style.display = 'block';
+      }
+    });
+
+    // Install button handler
+    const installBtn = document.getElementById('installBtn');
+    if (installBtn) {
+      installBtn.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        
+        console.log(`[PWA] User install response: ${outcome}`);
+        deferredPrompt = null;
+        installBtn.style.display = 'none';
+      });
+    }
+
+    // App installed event
+    window.addEventListener('appinstalled', () => {
+      console.log('[PWA] App installed successfully');
+      const installBtn = document.getElementById('installBtn');
+      if (installBtn) {
+        installBtn.style.display = 'none';
+      }
+    });
+
+    // iOS standalone detection
+    if (window.navigator.standalone === true) {
+      console.log('[PWA] Running as standalone app');
+      const installBtn = document.getElementById('installBtn');
+      if (installBtn) {
+        installBtn.style.display = 'none';
+      }
+      document.documentElement.classList.add('standalone');
+    }
+
+    // Online/offline event handlers
+    window.addEventListener('online', () => {
+      console.log('[PWA] Back online');
+      if (typeof showXPPopup === 'function') {
+        showXPPopup('✓ Back Online');
+      }
+    });
+
+    window.addEventListener('offline', () => {
+      console.log('[PWA] Went offline');
+      if (typeof showXPPopup === 'function') {
+        showXPPopup('📴 Offline Mode');
+      }
+    });
+
+    // Prevent accidental zoom through orientation change
+    window.addEventListener('orientationchange', () => {
+      document.documentElement.style.zoom = '1';
+      document.body.style.zoom = '1';
+    }, false);
+
+    // Ensure viewport stays at 1:1 scale
+    if (navigator.userAgent.match(/iPhone|iPad|iPod/)) {
+      window.addEventListener('resize', () => {
+        if (document.activeElement.tagName !== 'INPUT' && 
+            document.activeElement.tagName !== 'TEXTAREA') {
+          document.documentElement.style.zoom = '1';
+          document.body.style.zoom = '1';
+        }
+      });
+    }
+
+    // Prevent accidental text selection on buttons and non-input elements
+    document.addEventListener('mousedown', function(e) {
+      const tag = e.target.tagName;
+      if (tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT' && !e.target.isContentEditable) {
+        // Allow selection on elements with selectable class
+        if (!e.target.closest('.selectable, [contenteditable="true"]')) {
+          e.preventDefault();
+        }
+      }
+    });
+  </script>
+</body>
+</html>
